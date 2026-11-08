@@ -34,6 +34,7 @@
 #   paseo-peer <machine> tell <agentId> "message"  Message a session there (preferred). Adds a sender line on top and a reply
 #   paseo-peer <machine> tell <agentId> --file <p>   command at the bottom; steers into a running turn instead of interrupting.
 #                                                    Marked "cross-project" when the target is this machine, else "cross-machine".
+#                                                    On success prints "Sent: <machine> (serverId …)" so Paseo clients can open the target.
 #   paseo-peer <machine> wait <agentId> [--timeout M] [--interval S] [--start-grace S]
 #                                                    Wait for that session's current/next turn to finish, then print the
 #                                                    final status and its last reply in full (run it in the background
@@ -438,10 +439,12 @@ if [ "${1:-}" = tell ]; then
   trap 'rm -f "$tmp"' EXIT
   printf '%s\n---\n%s\n---\n%s\n' "$header" "$msg" "$reply" > "$tmp"
   set -- send --no-wait --behavior steer --prompt-file "$tmp" "$to"
+  told=1
 fi
 
 if [ "$server_id" = "$SELF_ID" ]; then
   "$PASEO" "$@"
+  sent=$?
 else
   # Pass the pairing link and password through the environment, not argv (argv is visible to other users via ps).
   # Shell assignments before exec, not env(1): `env VAR=value` would put the secrets in env's own argv.
@@ -454,4 +457,11 @@ else
       PASEO_HOST="$pairing" exec "$PASEO" "$@"
     fi
   )
+  sent=$?
 fi
+# After a successful tell, one line naming the target machine's serverId: Paseo clients show the message as a card
+# and need the serverId to open the target session (machine names here need not match host names in the app).
+if [ "${told:-0}" = 1 ] && [ "$sent" = 0 ] && [ -n "$server_id" ]; then
+  t "已发送：${target}（serverId ${server_id}）" "Sent: ${target} (serverId ${server_id})"; echo
+fi
+exit "$sent"

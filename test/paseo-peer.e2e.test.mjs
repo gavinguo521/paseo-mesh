@@ -88,6 +88,7 @@ describe("paseo-peer end-to-end", { skip: haveDaemon() ? false : `Paseo CLI not 
       const body = `please check ${tag}-en`
       const r = await a.peer(["b", "tell", bravo.shortId, body], fromAlpha("en"))
       assert.equal(r.code, 0, r.stderr)
+      assert.match(r.stdout, new RegExp(`^Sent: b \\(serverId ${b.serverId}\\)$`, "m"))
       const out = await received(b, bravo, body)
       assert.match(out, new RegExp(`\\[Cross-machine message\\] From session "alpha" in project "proj-alpha" \\(id ${alpha.shortId}\\) on Test A`))
       assert.match(out, new RegExp(`\\(To reply, run: \\S+ a tell ${alpha.shortId} "your reply"`))
@@ -98,6 +99,7 @@ describe("paseo-peer end-to-end", { skip: haveDaemon() ? false : `Paseo CLI not 
       const body = `请看一下 ${tag}-zh`
       const r = await a.peer(["b", "tell", bravo.shortId, body], fromAlpha("zh"))
       assert.equal(r.code, 0, r.stderr)
+      assert.match(r.stdout, new RegExp(`^已发送：b（serverId ${b.serverId}）$`, "m"))
       const out = await received(b, bravo, body)
       assert.match(out, new RegExp(`【跨机器消息】来自 Test A 上「proj-alpha」项目的会话「alpha」（id ${alpha.shortId}）`))
       assert.match(out, new RegExp(`（回复请运行：\\S+ a tell ${alpha.shortId} "回复内容"`))
@@ -107,6 +109,7 @@ describe("paseo-peer end-to-end", { skip: haveDaemon() ? false : `Paseo CLI not 
       const body = `local hello ${tag}`
       const r = await a.peer(["local", "tell", beta.shortId, body], fromAlpha("en"))
       assert.equal(r.code, 0, r.stderr)
+      assert.match(r.stdout, new RegExp(`^Sent: local \\(serverId ${a.serverId}\\)$`, "m"))
       const out = await received(a, beta, body)
       assert.match(out, new RegExp(`\\[Cross-project message\\] From session "alpha" in project "proj-alpha" \\(id ${alpha.shortId}\\)`))
       assert.doesNotMatch(out, /Cross-machine message/)
